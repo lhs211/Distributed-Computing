@@ -1,16 +1,72 @@
-import java.net.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.io.*;
 
-public class MandelbrotClient{
-    public static void main(String args[]){
+public class MandelbrotClient {
+
+    private static final String REGISTER_ME_MSG = "register me";
+
+    private static final int MAX_ITERATIONS = 200;
+    private static final int NUM_REAL_POINTS = 3000;
+    private static final int NUM_IMAGINARY_POINTS = 2000;
+
+    private static final double REAL_MIN_Z = -2.0f;
+    private static final double REAL_MAX_Z = 1.0f;
+    private static final double IMAGINARY_MIN_Z = -1.0f;
+    private static final double IMAGINARY_MAX_Z = 1.0f;
+
+    private final String hostName;
+
+    private double z0Real, z0Imaginary;
+    private double zReal, zImaginary;
+    private String content;
+
+    public MandelbrotClient(String hostName) {
+        this.hostName = hostName;
+        this.content = REGISTER_ME_MSG;
+    }
+
+    public static void main(String args[]) {
+        MandelbrotClient client = new MandelbrotClient("localhost");
+        client.run();
+    }
+
+    public int compute(int i, int j) {
+        int k = 0;
+
+        z0Real = (((double) i) / ((double) NUM_REAL_POINTS)) * (REAL_MAX_Z - REAL_MIN_Z) + REAL_MIN_Z;
+        z0Imaginary = (((double) j) / ((double) NUM_IMAGINARY_POINTS)) * (IMAGINARY_MAX_Z - IMAGINARY_MIN_Z) + IMAGINARY_MIN_Z;
+
+        zReal = z0Real;
+        zImaginary = z0Imaginary;
+
+        while (k < MAX_ITERATIONS) {
+            double zSquaredReal = (Math.pow(zReal, 2)) - (Math.pow(zImaginary, 2)); // Re(z^2)
+            double zSquaredImaginary = (double) 2.0 * zReal * zImaginary; // Im (z^2)
+
+            double magnitudeZSquaredSquared = (Math.pow(zSquaredReal, 2)) + (Math.pow(zSquaredImaginary, 2)); // | z^2|^2
+            if (magnitudeZSquaredSquared > 4) {
+                break; // Equivalent to |z^2|>2
+            }
+
+            zReal = zSquaredReal + z0Real; // update z to value at next iteration
+            zImaginary = zSquaredImaginary + z0Imaginary;
+
+            k++; // update iteration counter
+        }
+
+        System.out.println(k);
+        return k;
+    }
+
+    public void run() {
         // arguments give message content and server hostname
-        DatagramSocket aSocket=null;
-        try{
-            String hostname = "localhost";
-            String content = "register me";
-
+        DatagramSocket aSocket = null;
+        try {
             aSocket = new DatagramSocket();
             byte[] m = content.getBytes();
             InetAddress aHost = InetAddress.getByName(hostname);
@@ -21,8 +77,8 @@ public class MandelbrotClient{
             aSocket.send(request);
 
             // receive i,j values to calculate
-            int[] data = { 0,0 };
-            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);        
+            int[] data = {0, 0};
+            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * 4);
             IntBuffer intBuffer = byteBuffer.asIntBuffer();
             intBuffer.put(data);
             byte[] coords = byteBuffer.array();
@@ -33,53 +89,20 @@ public class MandelbrotClient{
             int i = ints[0];
             int j = ints[1];
             System.out.println("Reply: " + i + "+" + j);
-            int k = MandelbrotIter(i,j);
+            int k = compute(i, j);
 
             // send calculated k
             ByteBuffer b = ByteBuffer.allocate(4);
-            b.putInt(k-1);
+            b.putInt(k - 1);
             DatagramPacket result = new DatagramPacket(b.array(), b.array().length, aHost, serverPort);
             aSocket.send(result);
 
-        } catch (SocketException e) {System.out.println("Socket: " + e.getMessage());
-        } catch (IOException e) {System.out.println("IO: " + e.getMessage());
-        } finally {if (aSocket != null) aSocket.close();}
-    }
-
-    public static int MandelbrotIter(int i, int j){
-        int k = 0;
-        int maxIter = 200;
-
-        /* Number of points on real and imaginary axes*/
-        final int nRe = 3000;
-        final int nIm = 2000;
-
-        /* Domain size */
-        final float z_Re_min = -2.0f;
-        final float z_Re_max =  1.0f;
-        final float z_Im_min = -1.0f;
-        final float z_Im_max =  1.0f;
-          
-        /* Real and imaginary components of z at iteration 0*/
-        float z0_Re, z0_Im;
-        /* Real and imaginary components of z */
-        float z_Re, z_Im;
-
-        z0_Re = ( ( (float) i)/ ( (float) nRe)) * (z_Re_max - z_Re_min) + z_Re_min;
-        z0_Im = ( ( (float) j)/ ( (float) nIm)) * (z_Im_max - z_Im_min) + z_Im_min;
-        z_Re = z0_Re;
-        z_Im = z0_Im;
-
-        while (k < maxIter){
-            float z_sq_re = (z_Re*z_Re) - (z_Im*z_Im); // Re(z^2)
-            float z_sq_im = (float) 2.0 * z_Re * z_Im; // Im (z^2)
-            float mod_z_sq_sq = (z_sq_re * z_sq_re) + (z_sq_im * z_sq_im); // | z^2|^2
-            if ( mod_z_sq_sq > 4) break; // Equivalent to |z^2|>2
-            z_Re = z_sq_re + z0_Re; // update z to value at next iteration
-            z_Im = z_sq_im + z0_Im;
-            k++; // update iteration counter
+        } catch (SocketException e) {
+            System.out.println("Socket: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("IO: " + e.getMessage());
+        } finally {
+            if (aSocket != null) aSocket.close();
         }
-        System.out.println(k);
-        return k;
     }
 }
