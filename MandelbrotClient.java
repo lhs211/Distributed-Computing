@@ -69,7 +69,7 @@ public class MandelbrotClient {
         try {
             aSocket = new DatagramSocket();
             byte[] m = content.getBytes();
-            InetAddress aHost = InetAddress.getByName(hostname);
+            InetAddress aHost = InetAddress.getByName(hostName);
             int serverPort = 6789;
 
             // register client on server

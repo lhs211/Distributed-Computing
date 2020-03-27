@@ -1,15 +1,13 @@
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 class Serial {
 
-    /* Maximum number of iterations*/
+    /* Maximum number of iterations */
     private static final int MAX_ITERATIONS = 200;
 
-    /* Number of points on real and imaginary axes*/
+    /* Number of points on real and imaginary axes */
     private static final int NUM_REAL_POINTS = 3000;
     private static final int NUM_IMAGINARY_POINTS = 2000;
 
@@ -20,8 +18,6 @@ class Serial {
     private static final double IMAGINARY_MAX_Z = 1.0f;
 
     private static final String SPACE = " ";
-
-    private static final ExecutorService SERVICE = Executors.newFixedThreadPool(1);
 
     /* Real and imaginary components of z at iteration 0 */
     private double z0Real, z0Imaginary;
@@ -41,10 +37,7 @@ class Serial {
     }
 
     public void run() {
-        Future<?> calculations = SERVICE.submit(() -> serial);
-        
-        calculations.get();
-
+        startCalculations();
         writeResults();
     }
 
@@ -52,8 +45,8 @@ class Serial {
         System.out.println("Starting calculation\n");
 
         /* Loop over real and imaginary axes */
-        for (int i = 0; i < nRe + 1; i++) {
-            for (int j = 0; j < nIm + 1; j++) {
+        for (int i = 0; i < NUM_REAL_POINTS + 1; i++) {
+            for (int j = 0; j < NUM_IMAGINARY_POINTS + 1; j++) {
                 //z0 = z_Re + z_Im*I;
                 //z  = z0;
                 z0Real = (((float) i) / ((float) NUM_REAL_POINTS)) * (REAL_MAX_Z - REAL_MIN_Z) + REAL_MIN_Z;
