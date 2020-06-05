@@ -1,1 +1,2 @@
 # Distributed-Computing
+Problems where the workload can be decomposed with little or no communication between the different parts, can be tackled using distributed computing. A distributed system is one in which components located at networked computers communicate and coordinate their actions by passing messages. Distributed systems allow for: the sharing of resources; a collaborative environment; and aggregated computing power.
